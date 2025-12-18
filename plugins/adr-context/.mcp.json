@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "adr-context": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/src/mcp-servers/adr-context.js"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "ORG_NAME": "alldigitalrewards",
+        "SWAGGERHUB_URL": "https://api.swaggerhub.com/apis/AllDigitalRewards/Marketplace/2.2"
+      }
+    }
+  }
+}

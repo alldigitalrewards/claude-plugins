@@ -1,0 +1,19 @@
+{
+  "name": "@adr/context",
+  "version": "1.0.0",
+  "description": "Context7-style documentation server for AllDigitalRewards - provides up-to-date docs and code for ADR services",
+  "type": "module",
+  "main": "src/mcp-servers/adr-context.js",
+  "scripts": {
+    "start": "node src/mcp-servers/adr-context.js",
+    "dev": "node --watch src/mcp-servers/adr-context.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "AllDigitalRewards Platform Team",
+  "license": "MIT"
+}

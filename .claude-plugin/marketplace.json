@@ -6,41 +6,25 @@
   },
   "metadata": {
     "description": "Official AllDigitalRewards plugin marketplace for internal tools and integrations",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "pluginRoot": "./plugins"
   },
   "plugins": [
     {
-      "name": "repo-indexer",
-      "source": "./plugins/repo-indexer",
-      "description": "List ADR repositories, search by name/tag, fetch file trees and metadata via GitHub API",
+      "name": "adr-context",
+      "source": "./plugins/adr-context",
+      "description": "Context7-style documentation server - provides up-to-date docs and code for ADR services, APIs, and repositories with topic filtering",
       "version": "1.0.0",
       "author": {
         "name": "AllDigitalRewards Platform Team",
         "email": "platform@alldigitalrewards.com"
       },
-      "homepage": "https://docs.alldigitalrewards.com/plugins/repo-indexer",
+      "homepage": "https://docs.alldigitalrewards.com/plugins/adr-context",
       "repository": "https://github.com/alldigitalrewards/claude-plugins",
       "license": "MIT",
-      "keywords": ["github", "repository", "indexing", "search"],
-      "category": "development",
-      "tags": ["api-integration", "github", "enterprise"]
-    },
-    {
-      "name": "api-docs-extractor",
-      "source": "./plugins/api-docs-extractor",
-      "description": "Parse Swagger/OpenAPI URLs and output Markdown/MDX documentation sections",
-      "version": "1.0.0",
-      "author": {
-        "name": "AllDigitalRewards Platform Team",
-        "email": "platform@alldigitalrewards.com"
-      },
-      "homepage": "https://docs.alldigitalrewards.com/plugins/api-docs-extractor",
-      "repository": "https://github.com/alldigitalrewards/claude-plugins",
-      "license": "MIT",
-      "keywords": ["openapi", "swagger", "documentation", "extraction"],
+      "keywords": ["context7", "documentation", "api", "code-examples", "github"],
       "category": "documentation",
-      "tags": ["api", "docs", "swagger"]
+      "tags": ["context7", "docs", "enterprise", "api"]
     }
   ]
 }

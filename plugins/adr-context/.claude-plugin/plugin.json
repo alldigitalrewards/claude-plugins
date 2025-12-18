@@ -1,0 +1,14 @@
+{
+  "name": "adr-context",
+  "version": "1.0.0",
+  "description": "Context7-style documentation server for AllDigitalRewards - provides up-to-date docs and code for ADR services and APIs",
+  "author": {
+    "name": "AllDigitalRewards Platform Team",
+    "email": "platform@alldigitalrewards.com"
+  },
+  "homepage": "https://docs.alldigitalrewards.com/plugins/adr-context",
+  "repository": "https://github.com/alldigitalrewards/claude-plugins",
+  "license": "MIT",
+  "keywords": ["context7", "documentation", "api", "code-examples"],
+  "mcpServers": "./.mcp.json"
+}

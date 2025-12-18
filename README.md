@@ -1,6 +1,6 @@
 # AllDigitalRewards Claude Code Plugins
 
-Official plugin marketplace for AllDigitalRewards internal tools and integrations with Claude Code.
+Context7-style plugin marketplace for AllDigitalRewards - provides up-to-date documentation and code for ADR services directly in your Claude Code workflow.
 
 ## Installation
 
@@ -23,51 +23,73 @@ Or configure in your `.claude/settings.json`:
     }
   },
   "enabledPlugins": {
-    "repo-indexer@adr-main": true,
-    "api-docs-extractor@adr-main": true
+    "adr-context@adr-main": true
   }
 }
 ```
 
-## Available Plugins
+## ADR Context Plugin
 
-### Repo Indexer
+**Context7-style documentation server** that provides up-to-date docs and code for ADR services, APIs, and repositories.
 
-Search and index AllDigitalRewards repositories with GitHub API integration.
+### Usage
 
-**Commands:**
-- `/repo-search <query>` - Search repositories by name, tag, or keyword
-- `/repo-tree <repo>` - Fetch file tree structure of a repository
-- `/repo-readme <repo>` - Fetch README and documentation files
-- `/list-repos` - List all repositories in the organization
+Just add `use adr context` to your prompts, or configure auto-rules.
 
-**Agents:**
-- `repo-analyzer` - Deep analysis of repository structure and dependencies
-- `service-mapper` - Map relationships between ADR services
+### Tools
 
-**Requirements:**
-- `GITHUB_TOKEN` environment variable for API access
+#### `resolve-service-id`
 
-### API Docs Extractor
+Find ADR services by name. Call this first to get a service ID.
 
-Parse Swagger/OpenAPI URLs and output Markdown/MDX documentation sections.
+```
+resolve-service-id("marketplace")
+→ marketplace-api, claude-plugins, marketplace
 
-**Commands:**
-- `/parse-openapi <url>` - Parse OpenAPI spec and extract documentation
-- `/extract-endpoints <url>` - Extract all API endpoints
-- `/extract-schemas <url>` - Extract data models and schemas
-- `/generate-docs <url>` - Generate complete API documentation
+resolve-service-id("webhook")
+→ marketplace-api (has webhook topic)
 
-**Agents:**
-- `docs-generator` - Generate comprehensive API documentation
-- `schema-analyzer` - Analyze OpenAPI schemas and type relationships
+resolve-service-id("sdk")
+→ rewardstack-sdk, neo-currency-sdk, WeGift, carrier-tracking-sdk
+```
 
-**Requirements:**
-- `SWAGGERHUB_API_KEY` environment variable (optional, for SwaggerHub APIs)
+#### `get-service-docs`
+
+Fetch documentation for a resolved service. Supports topic filtering and two modes:
+
+- `mode: "code"` - API references, code examples, parameters
+- `mode: "info"` - Conceptual guides, READMEs, architecture
+
+```
+get-service-docs("marketplace-api", topic: "webhook")
+→ 7 webhook endpoints, 5 webhook schemas
+
+get-service-docs("marketplace-api", topic: "participant")
+→ 19 participant endpoints, 11 schemas
+
+get-service-docs("rewardstack-sdk", mode: "info")
+→ README, file tree, repository structure
+```
+
+### Available Topics (Marketplace API)
+
+- `authentication` - Token generation and auth
+- `organization` - Org management endpoints
+- `program` - Program configuration
+- `participant` - User management
+- `transaction` - Transaction history
+- `webhook` - Webhook configuration
+- `sso` - Single sign-on
+- `points` - Point adjustments
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GITHUB_TOKEN` | Recommended | GitHub token for higher rate limits |
+| `SWAGGERHUB_URL` | No | Custom SwaggerHub URL (defaults to ADR Marketplace API) |
 
 ## Development
-
-### Setup
 
 ```bash
 # Clone the repository
@@ -76,44 +98,10 @@ cd claude-plugins
 
 # Install dependencies
 npm install --workspaces
+
+# Test the server
+node plugins/adr-context/src/mcp-servers/adr-context.js
 ```
-
-### Structure
-
-```
-.
-├── .claude-plugin/
-│   └── marketplace.json      # Marketplace manifest
-├── plugins/
-│   ├── repo-indexer/         # Repository indexer plugin
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── commands/
-│   │   ├── agents/
-│   │   └── src/mcp-servers/
-│   └── api-docs-extractor/   # API docs extractor plugin
-│       ├── .claude-plugin/
-│       │   └── plugin.json
-│       ├── commands/
-│       ├── agents/
-│       └── src/mcp-servers/
-├── package.json
-└── README.md
-```
-
-### Adding a New Plugin
-
-1. Create a new directory under `plugins/`
-2. Add `.claude-plugin/plugin.json` manifest
-3. Implement commands, agents, and/or MCP servers
-4. Register the plugin in `.claude-plugin/marketplace.json`
-
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GITHUB_TOKEN` | Yes | GitHub personal access token for API access |
-| `SWAGGERHUB_API_KEY` | No | SwaggerHub API key for private API specs |
 
 ## License
 
