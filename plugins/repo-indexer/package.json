@@ -1,0 +1,19 @@
+{
+  "name": "@adr/repo-indexer",
+  "version": "1.0.0",
+  "description": "AllDigitalRewards Repository Indexer - GitHub API integration for Claude Code",
+  "type": "module",
+  "main": "src/mcp-servers/github-api.js",
+  "scripts": {
+    "start": "node src/mcp-servers/github-api.js",
+    "dev": "node --watch src/mcp-servers/github-api.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "AllDigitalRewards Platform Team",
+  "license": "MIT"
+}

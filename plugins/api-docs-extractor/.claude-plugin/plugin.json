@@ -1,0 +1,17 @@
+{
+  "name": "api-docs-extractor",
+  "version": "1.0.0",
+  "description": "Parse Swagger/OpenAPI URLs and output Markdown/MDX documentation sections",
+  "author": {
+    "name": "AllDigitalRewards Platform Team",
+    "email": "platform@alldigitalrewards.com"
+  },
+  "homepage": "https://docs.alldigitalrewards.com/plugins/api-docs-extractor",
+  "repository": "https://github.com/alldigitalrewards/claude-plugins",
+  "license": "MIT",
+  "keywords": ["openapi", "swagger", "documentation", "markdown"],
+  "commands": ["./commands/"],
+  "agents": ["./agents/"],
+  "skills": ["./skills/"],
+  "mcpServers": "./.mcp.json"
+}

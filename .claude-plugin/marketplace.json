@@ -1,0 +1,46 @@
+{
+  "name": "adr-main",
+  "owner": {
+    "name": "AllDigitalRewards Engineering",
+    "email": "engineering@alldigitalrewards.com"
+  },
+  "metadata": {
+    "description": "Official AllDigitalRewards plugin marketplace for internal tools and integrations",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "repo-indexer",
+      "source": "./plugins/repo-indexer",
+      "description": "List ADR repositories, search by name/tag, fetch file trees and metadata via GitHub API",
+      "version": "1.0.0",
+      "author": {
+        "name": "AllDigitalRewards Platform Team",
+        "email": "platform@alldigitalrewards.com"
+      },
+      "homepage": "https://docs.alldigitalrewards.com/plugins/repo-indexer",
+      "repository": "https://github.com/alldigitalrewards/claude-plugins",
+      "license": "MIT",
+      "keywords": ["github", "repository", "indexing", "search"],
+      "category": "development",
+      "tags": ["api-integration", "github", "enterprise"]
+    },
+    {
+      "name": "api-docs-extractor",
+      "source": "./plugins/api-docs-extractor",
+      "description": "Parse Swagger/OpenAPI URLs and output Markdown/MDX documentation sections",
+      "version": "1.0.0",
+      "author": {
+        "name": "AllDigitalRewards Platform Team",
+        "email": "platform@alldigitalrewards.com"
+      },
+      "homepage": "https://docs.alldigitalrewards.com/plugins/api-docs-extractor",
+      "repository": "https://github.com/alldigitalrewards/claude-plugins",
+      "license": "MIT",
+      "keywords": ["openapi", "swagger", "documentation", "extraction"],
+      "category": "documentation",
+      "tags": ["api", "docs", "swagger"]
+    }
+  ]
+}

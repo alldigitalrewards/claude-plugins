@@ -1,0 +1,20 @@
+{
+  "name": "@adr/claude-plugins",
+  "version": "1.0.0",
+  "description": "AllDigitalRewards Claude Code Plugin Marketplace",
+  "private": true,
+  "workspaces": [
+    "plugins/*"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "start:repo-indexer": "npm start --workspace=@adr/repo-indexer",
+    "start:api-docs": "npm start --workspace=@adr/api-docs-extractor"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alldigitalrewards/claude-plugins.git"
+  },
+  "author": "AllDigitalRewards Engineering",
+  "license": "MIT"
+}
