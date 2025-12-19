@@ -144,6 +144,138 @@ Without `OPENAI_API_KEY`, the plugin falls back to keyword-based search (still f
 
 ---
 
+## Version Pinning
+
+For production-critical projects that need stability, pin to a specific marketplace version using git refs:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "adr-main": {
+      "source": {
+        "source": "github",
+        "repo": "alldigitalrewards/claude-plugins",
+        "ref": "v1.0.0"
+      }
+    }
+  }
+}
+```
+
+This ensures your team uses a known, tested version rather than automatically pulling the latest changes.
+
+### Auto-Update Behavior
+
+| Marketplace Type | Auto-Update Default |
+|------------------|---------------------|
+| Official Anthropic | Enabled |
+| Third-party (like this one) | Disabled |
+| Local development | Disabled |
+
+Toggle auto-update via: `/plugin` → Marketplaces → Select marketplace → Configure
+
+See: [Plugin Marketplaces Documentation](https://docs.anthropic.com/en/docs/claude-code/plugins#marketplaces)
+
+---
+
+## Security & Plugin Approval
+
+### Our Approval Process
+
+All plugins in this marketplace go through team review before merging:
+
+1. **Code Review** - PR reviewed by at least one platform team member
+2. **Security Check** - No credential exposure, safe API usage, no unexpected network calls
+3. **Testing** - Plugin validated with `claude plugin validate .` before merge
+4. **Documentation** - README and usage examples required
+
+### Plugin Validation
+
+Before submitting a new plugin, validate it locally:
+
+```bash
+# Validate marketplace and plugin structure
+claude plugin validate .
+
+# Test plugin installation
+/plugin marketplace add ./
+/plugin install your-plugin@local
+```
+
+### Permission Model
+
+Claude Code uses a permission-based system for plugin operations. Plugins can request:
+
+- Tool access (Bash, Read, Write, etc.)
+- MCP server connections
+- Network access for external APIs
+
+Users are prompted to approve permissions on first use. See: [Claude Code Security](https://docs.anthropic.com/en/docs/claude-code/security)
+
+---
+
+## Enterprise Controls
+
+For stricter governance, ADR can enforce marketplace restrictions organization-wide using managed settings.
+
+### Restricting to Approved Marketplaces
+
+Create a managed settings file to restrict which marketplaces users can add:
+
+```json
+{
+  "strictKnownMarketplaces": [
+    {
+      "source": "github",
+      "repo": "alldigitalrewards/claude-plugins"
+    }
+  ]
+}
+```
+
+### Managed Settings Locations
+
+These files require admin privileges and cannot be overridden by users:
+
+| Platform | Path |
+|----------|------|
+| macOS | `/Library/Application Support/ClaudeCode/managed-settings.json` |
+| Linux/WSL | `/etc/claude-code/managed-settings.json` |
+| Windows | `C:\ProgramData\ClaudeCode\managed-settings.json` |
+
+### What `strictKnownMarketplaces` Does
+
+- Enforced at system level before any network/filesystem operations
+- Uses exact matching (including `ref` and `path` fields if specified)
+- Cannot be overridden by user or project settings
+- Only affects adding NEW marketplaces—previously installed ones continue working
+
+See: [Claude Code Settings Reference](https://docs.anthropic.com/en/docs/claude-code/settings)
+
+---
+
+## Best Practices (per Anthropic)
+
+Anthropic recommends a layered approach to team plugin management:
+
+| Stage | Approach |
+|-------|----------|
+| **Getting Started** | GitHub-hosted marketplace, manual installs |
+| **Team Adoption** | Commit `.claude/settings.json` to repos for auto-install |
+| **Enterprise** | Add `strictKnownMarketplaces` via managed settings |
+
+### Key Recommendations
+
+1. **Version control your configs** - Share `.claude/settings.json` in repos
+2. **Document security processes** - Clear approval flow for new plugins
+3. **Start simple, add controls later** - Don't over-engineer governance early
+4. **Use MCP for integrations** - Check `.mcp.json` into codebases for shared tool access
+5. **Deploy CLAUDE.md files** - Organization-wide standards in system directories
+
+See: [Claude Code for Organizations](https://docs.anthropic.com/en/docs/claude-code/overview)
+
+---
+
 ## Development
 
 ### Local Testing
