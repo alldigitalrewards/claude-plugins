@@ -1,15 +1,17 @@
 {
   "name": "@adr/context",
-  "version": "1.0.0",
-  "description": "Context7-style documentation server for AllDigitalRewards - provides up-to-date docs and code for ADR services",
+  "version": "2.0.0",
+  "description": "AI-powered Context7-style documentation server for AllDigitalRewards - semantic search across ADR services, APIs, and code",
   "type": "module",
   "main": "src/mcp-servers/adr-context.js",
   "scripts": {
     "start": "node src/mcp-servers/adr-context.js",
-    "dev": "node --watch src/mcp-servers/adr-context.js"
+    "dev": "node --watch src/mcp-servers/adr-context.js",
+    "index": "node src/indexer.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "openai": "^4.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

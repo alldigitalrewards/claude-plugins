@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * ADR Context - Context7-style MCP Server for AllDigitalRewards
+ * ADR Context v2.0 - AI-Powered Context7-style MCP Server
  *
- * Provides up-to-date documentation and code examples for ADR services,
- * APIs, and libraries. Works like Context7 but for internal ADR resources.
+ * Provides semantic search across ADR services, APIs, and code using
+ * OpenAI embeddings for intelligent query understanding.
  *
  * Tools:
- * - resolve-service-id: Find ADR services/repos by name
- * - get-service-docs: Fetch docs and code for a resolved service
+ * - resolve-service-id: AI-powered service discovery
+ * - get-service-docs: RAG-enhanced documentation retrieval
+ * - ask: Natural language questions about ADR codebase
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -17,34 +18,158 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import OpenAI from "openai";
+
+// ============================================================================
+// Configuration
+// ============================================================================
 
 const GITHUB_API_URL = process.env.GITHUB_API_URL || "https://api.github.com";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const ORG_NAME = process.env.ORG_NAME || "alldigitalrewards";
 const SWAGGERHUB_URL = process.env.SWAGGERHUB_URL || "https://api.swaggerhub.com/apis/AllDigitalRewards/Marketplace/2.2";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const headers = {
+const githubHeaders = {
   Accept: "application/vnd.github.v3+json",
-  "User-Agent": "ADR-Context",
+  "User-Agent": "ADR-Context-AI",
   ...(GITHUB_TOKEN && { Authorization: `Bearer ${GITHUB_TOKEN}` }),
 };
 
+// Initialize OpenAI client
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
+
 // ============================================================================
-// Service Registry - Maps friendly names to resources
+// In-Memory Vector Store
 // ============================================================================
 
-const SERVICE_REGISTRY = {
-  // APIs
-  "marketplace-api": {
-    type: "api",
-    name: "ADR Marketplace Platform API",
-    description: "Core marketplace API for organizations, programs, participants, and transactions",
-    swagger_url: "https://api.swaggerhub.com/apis/AllDigitalRewards/Marketplace/2.2",
-    topics: ["authentication", "organization", "program", "participant", "transaction", "webhook", "sso", "points"],
-  },
+class VectorStore {
+  constructor() {
+    this.documents = [];
+    this.embeddings = [];
+  }
 
-  // Repositories (populated dynamically)
-};
+  async addDocument(doc, embedding) {
+    this.documents.push(doc);
+    this.embeddings.push(embedding);
+  }
+
+  async search(queryEmbedding, topK = 5) {
+    if (this.embeddings.length === 0) return [];
+
+    // Calculate cosine similarity
+    const similarities = this.embeddings.map((emb, idx) => ({
+      index: idx,
+      score: this.cosineSimilarity(queryEmbedding, emb),
+    }));
+
+    // Sort by similarity and return top K
+    similarities.sort((a, b) => b.score - a.score);
+    return similarities.slice(0, topK).map((s) => ({
+      document: this.documents[s.index],
+      score: s.score,
+    }));
+  }
+
+  cosineSimilarity(a, b) {
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  clear() {
+    this.documents = [];
+    this.embeddings = [];
+  }
+}
+
+// Global vector stores
+const serviceStore = new VectorStore();
+const docsStore = new VectorStore();
+let isIndexed = false;
+
+// ============================================================================
+// AI Helpers
+// ============================================================================
+
+async function getEmbedding(text) {
+  if (!openai) {
+    // Fallback: simple TF-IDF-like embedding
+    return simpleEmbedding(text);
+  }
+
+  try {
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text.slice(0, 8000), // Limit input length
+    });
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error("Embedding error:", error.message);
+    return simpleEmbedding(text);
+  }
+}
+
+// Simple fallback embedding (word frequency based)
+function simpleEmbedding(text, dimensions = 256) {
+  const words = text.toLowerCase().split(/\W+/).filter((w) => w.length > 2);
+  const embedding = new Array(dimensions).fill(0);
+
+  for (const word of words) {
+    let hash = 0;
+    for (let i = 0; i < word.length; i++) {
+      hash = (hash * 31 + word.charCodeAt(i)) % dimensions;
+    }
+    embedding[hash] += 1;
+  }
+
+  // Normalize
+  const norm = Math.sqrt(embedding.reduce((sum, v) => sum + v * v, 0)) || 1;
+  return embedding.map((v) => v / norm);
+}
+
+async function generateAnswer(question, context) {
+  if (!openai) {
+    // Return context as-is without AI synthesis
+    return {
+      answer: "AI synthesis unavailable (no OPENAI_API_KEY). Here's the relevant context:",
+      context,
+    };
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert on AllDigitalRewards (ADR) systems. Answer questions based on the provided context from ADR's codebase and API documentation. Be concise and include code examples when relevant.`,
+        },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nQuestion: ${question}`,
+        },
+      ],
+      max_tokens: 1000,
+    });
+
+    return {
+      answer: response.choices[0].message.content,
+      context,
+    };
+  } catch (error) {
+    return {
+      answer: `AI error: ${error.message}. Here's the relevant context:`,
+      context,
+    };
+  }
+}
 
 // ============================================================================
 // GitHub API Helpers
@@ -52,7 +177,7 @@ const SERVICE_REGISTRY = {
 
 async function githubRequest(endpoint) {
   const url = `${GITHUB_API_URL}${endpoint}`;
-  const response = await fetch(url, { headers });
+  const response = await fetch(url, { headers: githubHeaders });
 
   if (!response.ok) {
     throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
@@ -66,7 +191,7 @@ async function fetchOrgRepos() {
   return repos.map((r) => ({
     id: r.name,
     name: r.name,
-    description: r.description,
+    description: r.description || "",
     language: r.language,
     topics: r.topics || [],
     url: r.html_url,
@@ -74,32 +199,35 @@ async function fetchOrgRepos() {
   }));
 }
 
-async function fetchRepoContent(repo, path, branch) {
-  const branchParam = branch ? `?ref=${branch}` : "";
-  const data = await githubRequest(`/repos/${ORG_NAME}/${repo}/contents/${path}${branchParam}`);
-
-  if (data.type === "file") {
-    return Buffer.from(data.content, "base64").toString("utf-8");
+async function fetchRepoContent(repo, path) {
+  try {
+    const data = await githubRequest(`/repos/${ORG_NAME}/${repo}/contents/${path}`);
+    if (data.type === "file") {
+      return Buffer.from(data.content, "base64").toString("utf-8");
+    }
+  } catch {
+    return null;
   }
-
   return null;
 }
 
-async function fetchRepoTree(repo, branch) {
-  if (!branch) {
+async function fetchRepoTree(repo) {
+  try {
     const repoData = await githubRequest(`/repos/${ORG_NAME}/${repo}`);
-    branch = repoData.default_branch;
+    const treeData = await githubRequest(
+      `/repos/${ORG_NAME}/${repo}/git/trees/${repoData.default_branch}?recursive=1`
+    );
+    return treeData.tree;
+  } catch {
+    return [];
   }
-
-  const treeData = await githubRequest(`/repos/${ORG_NAME}/${repo}/git/trees/${branch}?recursive=1`);
-  return treeData.tree;
 }
 
 // ============================================================================
 // API Documentation Helpers
 // ============================================================================
 
-async function fetchApiSpec(url) {
+async function fetchApiSpec(url = SWAGGERHUB_URL) {
   const response = await fetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) {
     throw new Error(`Failed to fetch API spec: ${response.status}`);
@@ -107,169 +235,110 @@ async function fetchApiSpec(url) {
   return response.json();
 }
 
-function extractApiDocs(spec, topic, mode = "code") {
-  const results = { endpoints: [], schemas: [], examples: [] };
+// ============================================================================
+// Indexing Functions
+// ============================================================================
 
-  if (!topic) {
-    // Return overview
-    return {
-      title: spec.info?.title,
-      version: spec.info?.version,
-      description: spec.info?.description,
-      servers: spec.servers,
-      tags: spec.tags?.map((t) => t.name) || [],
-      pathCount: Object.keys(spec.paths || {}).length,
-      schemaCount: Object.keys(spec.components?.schemas || {}).length,
-    };
+async function indexServices() {
+  console.error("Indexing ADR services...");
+
+  // Index API
+  const apiDoc = {
+    id: "marketplace-api",
+    type: "api",
+    name: "ADR Marketplace Platform API",
+    description: "Core marketplace API for organizations, programs, participants, transactions, webhooks, SSO, and points management",
+    topics: ["authentication", "organization", "program", "participant", "transaction", "webhook", "sso", "points"],
+  };
+
+  const apiText = `${apiDoc.name} ${apiDoc.description} ${apiDoc.topics.join(" ")}`;
+  const apiEmbedding = await getEmbedding(apiText);
+  await serviceStore.addDocument(apiDoc, apiEmbedding);
+
+  // Index repositories
+  const repos = await fetchOrgRepos();
+  for (const repo of repos) {
+    const text = `${repo.name} ${repo.description} ${repo.topics.join(" ")} ${repo.language || ""}`;
+    const embedding = await getEmbedding(text);
+    await serviceStore.addDocument({ ...repo, type: "repository" }, embedding);
   }
 
-  const topicLower = topic.toLowerCase();
-
-  // Search endpoints
-  for (const [path, methods] of Object.entries(spec.paths || {})) {
-    for (const [method, operation] of Object.entries(methods)) {
-      if (!["get", "post", "put", "delete", "patch"].includes(method)) continue;
-
-      const searchText = [
-        path,
-        operation.summary || "",
-        operation.description || "",
-        ...(operation.tags || []),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      if (searchText.includes(topicLower)) {
-        const endpoint = {
-          method: method.toUpperCase(),
-          path,
-          summary: operation.summary,
-          description: operation.description,
-          tags: operation.tags,
-        };
-
-        if (mode === "code") {
-          // Include request/response details
-          endpoint.parameters = operation.parameters?.map((p) => ({
-            name: p.name,
-            in: p.in,
-            required: p.required,
-            type: p.schema?.type,
-            description: p.description,
-          }));
-
-          if (operation.requestBody?.content) {
-            const mediaType = Object.keys(operation.requestBody.content)[0];
-            const schema = operation.requestBody.content[mediaType]?.schema;
-            endpoint.requestBody = {
-              contentType: mediaType,
-              schema: schema?.$ref?.split("/").pop() || schema,
-            };
-          }
-
-          if (operation.responses) {
-            endpoint.responses = Object.entries(operation.responses).map(([code, resp]) => ({
-              code,
-              description: resp.description,
-            }));
-          }
-        }
-
-        results.endpoints.push(endpoint);
-      }
-    }
-  }
-
-  // Search schemas
-  const schemas = spec.components?.schemas || spec.definitions || {};
-  for (const [name, schema] of Object.entries(schemas)) {
-    const searchText = [name, schema.description || "", ...Object.keys(schema.properties || [])]
-      .join(" ")
-      .toLowerCase();
-
-    if (searchText.includes(topicLower)) {
-      const schemaInfo = {
-        name,
-        description: schema.description,
-      };
-
-      if (mode === "code") {
-        schemaInfo.properties = Object.entries(schema.properties || {}).map(([propName, prop]) => ({
-          name: propName,
-          type: prop.type || (prop.$ref ? prop.$ref.split("/").pop() : "object"),
-          description: prop.description,
-          required: schema.required?.includes(propName),
-        }));
-      }
-
-      results.schemas.push(schemaInfo);
-    }
-  }
-
-  return results;
+  console.error(`Indexed ${repos.length + 1} services`);
 }
 
-// ============================================================================
-// Repository Documentation Helpers
-// ============================================================================
+async function indexDocs() {
+  console.error("Indexing documentation...");
 
-async function extractRepoDocs(repo, topic, mode = "code") {
-  const results = { readme: null, files: [], codeSnippets: [] };
-
+  // Index API endpoints
   try {
-    // Fetch README
-    try {
-      results.readme = await fetchRepoContent(repo, "README.md");
-    } catch {
-      // No README
-    }
+    const spec = await fetchApiSpec();
 
-    // Fetch tree
-    const tree = await fetchRepoTree(repo);
+    for (const [path, methods] of Object.entries(spec.paths || {})) {
+      for (const [method, operation] of Object.entries(methods)) {
+        if (!["get", "post", "put", "delete", "patch"].includes(method)) continue;
 
-    // Find relevant files
-    const relevantExtensions = [".js", ".ts", ".php", ".py", ".md", ".json"];
-    const relevantFiles = tree.filter(
-      (item) =>
-        item.type === "blob" && relevantExtensions.some((ext) => item.path.endsWith(ext))
-    );
+        const doc = {
+          type: "endpoint",
+          method: method.toUpperCase(),
+          path,
+          summary: operation.summary || "",
+          description: operation.description || "",
+          tags: operation.tags || [],
+          operationId: operation.operationId,
+        };
 
-    // If topic specified, filter and fetch content
-    if (topic && mode === "code") {
-      const topicLower = topic.toLowerCase();
-
-      // Find files matching topic
-      const matchingFiles = relevantFiles
-        .filter((f) => f.path.toLowerCase().includes(topicLower))
-        .slice(0, 5);
-
-      for (const file of matchingFiles) {
-        try {
-          const content = await fetchRepoContent(repo, file.path);
-          if (content) {
-            results.codeSnippets.push({
-              path: file.path,
-              content: content.slice(0, 2000), // Truncate large files
-              truncated: content.length > 2000,
-            });
-          }
-        } catch {
-          // Skip inaccessible files
-        }
+        const text = `${method} ${path} ${doc.summary} ${doc.description} ${doc.tags.join(" ")}`;
+        const embedding = await getEmbedding(text);
+        await docsStore.addDocument(doc, embedding);
       }
     }
 
-    // Always include file tree summary
-    results.files = relevantFiles.slice(0, 50).map((f) => ({
-      path: f.path,
-      size: f.size,
-    }));
+    // Index schemas
+    const schemas = spec.components?.schemas || spec.definitions || {};
+    for (const [name, schema] of Object.entries(schemas)) {
+      const doc = {
+        type: "schema",
+        name,
+        description: schema.description || "",
+        properties: Object.keys(schema.properties || {}),
+      };
 
+      const text = `${name} ${doc.description} ${doc.properties.join(" ")}`;
+      const embedding = await getEmbedding(text);
+      await docsStore.addDocument(doc, embedding);
+    }
+
+    console.error(`Indexed ${Object.keys(spec.paths || {}).length} endpoints`);
   } catch (error) {
-    results.error = error.message;
+    console.error("API indexing error:", error.message);
   }
 
-  return results;
+  // Index repo READMEs
+  const repos = await fetchOrgRepos();
+  for (const repo of repos.slice(0, 10)) {
+    // Limit to top 10 repos
+    const readme = await fetchRepoContent(repo.id, "README.md");
+    if (readme) {
+      const doc = {
+        type: "readme",
+        repo: repo.id,
+        content: readme.slice(0, 2000),
+      };
+
+      const embedding = await getEmbedding(readme.slice(0, 4000));
+      await docsStore.addDocument(doc, embedding);
+    }
+  }
+
+  console.error("Documentation indexing complete");
+}
+
+async function ensureIndexed() {
+  if (!isIndexed) {
+    await indexServices();
+    await indexDocs();
+    isIndexed = true;
+  }
 }
 
 // ============================================================================
@@ -279,7 +348,7 @@ async function extractRepoDocs(repo, topic, mode = "code") {
 const server = new Server(
   {
     name: "adr-context",
-    version: "1.0.0",
+    version: "2.0.0",
   },
   {
     capabilities: {
@@ -288,56 +357,73 @@ const server = new Server(
   }
 );
 
-// Define tools (Context7-style)
+// Define tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
         name: "resolve-service-id",
         description:
-          "Resolves an ADR service/product name to a Context-compatible service ID. " +
-          "Call this BEFORE 'get-service-docs' to find the correct service ID. " +
-          "Returns matching services with descriptions and available topics.",
+          "AI-powered service discovery. Uses semantic search to find ADR services, APIs, and repositories " +
+          "matching your query. Returns ranked results by relevance. Call this before 'get-service-docs'.",
         inputSchema: {
           type: "object",
           properties: {
-            serviceName: {
+            query: {
               type: "string",
               description:
-                "Service name to search for (e.g., 'marketplace', 'participant', 'webhook', 'sdk')",
+                "Natural language query to find services (e.g., 'user management', 'payment processing', 'webhook handling')",
             },
           },
-          required: ["serviceName"],
+          required: ["query"],
         },
       },
       {
         name: "get-service-docs",
         description:
-          "Fetches up-to-date documentation for an ADR service. " +
-          "You must call 'resolve-service-id' first to get the service ID. " +
-          "Use mode='code' for API references and code examples, " +
-          "or mode='info' for conceptual guides and architecture.",
+          "RAG-enhanced documentation retrieval. Uses AI to find the most relevant documentation, " +
+          "code examples, and API references for your query. Supports topic filtering.",
         inputSchema: {
           type: "object",
           properties: {
             serviceId: {
               type: "string",
-              description:
-                "Service ID from 'resolve-service-id' (e.g., 'marketplace-api', 'rewardstack-sdk')",
+              description: "Service ID from 'resolve-service-id' (e.g., 'marketplace-api', 'rewardstack-sdk')",
             },
-            topic: {
+            query: {
               type: "string",
-              description:
-                "Topic to focus on (e.g., 'webhook', 'authentication', 'participant', 'transaction')",
+              description: "What you want to know about this service (e.g., 'how to create webhooks', 'authentication flow')",
             },
             mode: {
               type: "string",
               enum: ["code", "info"],
-              description: "Documentation mode: 'code' for API/code examples, 'info' for conceptual docs",
+              description: "Mode: 'code' for API/code examples, 'info' for conceptual docs",
               default: "code",
             },
           },
           required: ["serviceId"],
+        },
+      },
+      {
+        name: "ask",
+        description:
+          "Ask any question about the ADR codebase, APIs, or architecture. Uses RAG to find relevant " +
+          "context and AI to synthesize a comprehensive answer with code examples.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            question: {
+              type: "string",
+              description:
+                "Your question about ADR systems (e.g., 'How does participant authentication work?', 'What webhook events are available?')",
+            },
+            maxResults: {
+              type: "number",
+              description: "Maximum number of context documents to retrieve",
+              default: 5,
+            },
+          },
+          required: ["question"],
         },
       },
     ],
@@ -349,50 +435,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
+    await ensureIndexed();
+
     switch (name) {
       case "resolve-service-id": {
-        const searchTerm = args.serviceName.toLowerCase();
-        const results = [];
+        const queryEmbedding = await getEmbedding(args.query);
+        const results = await serviceStore.search(queryEmbedding, 10);
 
-        // Search in service registry
-        for (const [id, service] of Object.entries(SERVICE_REGISTRY)) {
-          if (
-            id.includes(searchTerm) ||
-            service.name.toLowerCase().includes(searchTerm) ||
-            service.description?.toLowerCase().includes(searchTerm) ||
-            service.topics?.some((t) => t.includes(searchTerm))
-          ) {
-            results.push({
-              id,
-              type: service.type,
-              name: service.name,
-              description: service.description,
-              topics: service.topics,
-            });
-          }
-        }
-
-        // Search GitHub repos
-        const repos = await fetchOrgRepos();
-        for (const repo of repos) {
-          if (
-            repo.name.toLowerCase().includes(searchTerm) ||
-            repo.description?.toLowerCase().includes(searchTerm) ||
-            repo.topics?.some((t) => t.includes(searchTerm))
-          ) {
-            // Don't duplicate if already in registry
-            if (!results.find((r) => r.id === repo.name)) {
-              results.push({
-                id: repo.id,
-                type: "repository",
-                name: repo.name,
-                description: repo.description,
-                language: repo.language,
-                topics: repo.topics,
-              });
-            }
-          }
-        }
+        const services = results.map((r) => ({
+          id: r.document.id,
+          type: r.document.type,
+          name: r.document.name || r.document.id,
+          description: r.document.description,
+          relevance: Math.round(r.score * 100) / 100,
+          topics: r.document.topics,
+          language: r.document.language,
+        }));
 
         return {
           content: [
@@ -400,13 +458,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: "text",
               text: JSON.stringify(
                 {
-                  query: args.serviceName,
-                  count: results.length,
-                  services: results,
+                  query: args.query,
+                  aiPowered: !!openai,
+                  count: services.length,
+                  services,
                   hint:
-                    results.length > 0
-                      ? `Use 'get-service-docs' with serviceId='${results[0].id}' to fetch documentation`
-                      : "No matching services found. Try a different search term.",
+                    services.length > 0
+                      ? `Use 'get-service-docs' with serviceId='${services[0].id}' and your specific question`
+                      : "No matching services found. Try a different query.",
                 },
                 null,
                 2
@@ -417,41 +476,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "get-service-docs": {
-        const serviceId = args.serviceId;
-        const topic = args.topic;
-        const mode = args.mode || "code";
+        const { serviceId, query, mode = "code" } = args;
 
-        // Check if it's a registered API
-        const registeredService = SERVICE_REGISTRY[serviceId];
+        // Build search query
+        const searchQuery = query ? `${serviceId} ${query}` : serviceId;
+        const queryEmbedding = await getEmbedding(searchQuery);
+        const results = await docsStore.search(queryEmbedding, 10);
 
-        if (registeredService?.type === "api") {
-          // Fetch API documentation
-          const spec = await fetchApiSpec(registeredService.swagger_url);
-          const docs = extractApiDocs(spec, topic, mode);
+        // Filter and format results
+        const endpoints = results
+          .filter((r) => r.document.type === "endpoint")
+          .map((r) => ({
+            ...r.document,
+            relevance: Math.round(r.score * 100) / 100,
+          }));
 
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(
-                  {
-                    serviceId,
-                    serviceName: registeredService.name,
-                    type: "api",
-                    topic: topic || "overview",
-                    mode,
-                    documentation: docs,
-                  },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
+        const schemas = results
+          .filter((r) => r.document.type === "schema")
+          .map((r) => ({
+            ...r.document,
+            relevance: Math.round(r.score * 100) / 100,
+          }));
+
+        const readmes = results
+          .filter((r) => r.document.type === "readme")
+          .map((r) => ({
+            repo: r.document.repo,
+            excerpt: r.document.content.slice(0, 500),
+            relevance: Math.round(r.score * 100) / 100,
+          }));
+
+        // Generate AI summary if available
+        let aiSummary = null;
+        if (openai && query) {
+          const context = results
+            .slice(0, 5)
+            .map((r) => JSON.stringify(r.document))
+            .join("\n\n");
+
+          const answer = await generateAnswer(
+            `For the ADR service "${serviceId}": ${query}`,
+            context
+          );
+          aiSummary = answer.answer;
         }
-
-        // Treat as repository
-        const repoDocs = await extractRepoDocs(serviceId, topic, mode);
 
         return {
           content: [
@@ -460,10 +528,78 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 {
                   serviceId,
-                  type: "repository",
-                  topic: topic || "overview",
+                  query: query || "overview",
                   mode,
-                  documentation: repoDocs,
+                  aiPowered: !!openai,
+                  aiSummary,
+                  documentation: {
+                    endpoints: endpoints.slice(0, 10),
+                    schemas: schemas.slice(0, 5),
+                    readmes: readmes.slice(0, 3),
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      case "ask": {
+        const { question, maxResults = 5 } = args;
+
+        // Search both stores
+        const queryEmbedding = await getEmbedding(question);
+        const serviceResults = await serviceStore.search(queryEmbedding, 3);
+        const docResults = await docsStore.search(queryEmbedding, maxResults);
+
+        // Build context
+        const contextParts = [];
+
+        for (const r of serviceResults) {
+          contextParts.push(`Service: ${r.document.name || r.document.id}\nDescription: ${r.document.description}`);
+        }
+
+        for (const r of docResults) {
+          if (r.document.type === "endpoint") {
+            contextParts.push(
+              `API Endpoint: ${r.document.method} ${r.document.path}\nSummary: ${r.document.summary}\nDescription: ${r.document.description}`
+            );
+          } else if (r.document.type === "schema") {
+            contextParts.push(
+              `Schema: ${r.document.name}\nDescription: ${r.document.description}\nProperties: ${r.document.properties.join(", ")}`
+            );
+          } else if (r.document.type === "readme") {
+            contextParts.push(`README (${r.document.repo}):\n${r.document.content.slice(0, 500)}`);
+          }
+        }
+
+        const context = contextParts.join("\n\n---\n\n");
+
+        // Generate answer
+        const result = await generateAnswer(question, context);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  question,
+                  aiPowered: !!openai,
+                  answer: result.answer,
+                  sources: {
+                    services: serviceResults.map((r) => ({
+                      id: r.document.id,
+                      relevance: Math.round(r.score * 100) / 100,
+                    })),
+                    documents: docResults.map((r) => ({
+                      type: r.document.type,
+                      id: r.document.name || r.document.path || r.document.repo,
+                      relevance: Math.round(r.score * 100) / 100,
+                    })),
+                  },
                 },
                 null,
                 2
@@ -493,7 +629,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("ADR Context MCP server running on stdio");
+  console.error(`ADR Context v2.0 (AI-powered: ${!!openai}) running on stdio`);
 }
 
 main().catch(console.error);
