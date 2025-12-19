@@ -84,7 +84,7 @@ Add to `~/.claude/settings.json` to have plugins available across all projects:
 
 ## Available Plugins
 
-### ADR Context (v2.0)
+### ADR Context (v2.1)
 
 AI-powered documentation server that provides semantic search across ADR services, APIs, and code. Think of it as Context7 but for our internal services.
 
@@ -95,6 +95,7 @@ AI-powered documentation server that provides semantic search across ADR service
 - **RAG-Enhanced Docs** - Retrieves the most relevant documentation and code examples
 - **Natural Language Q&A** - Ask questions about ADR systems and get synthesized answers with code examples
 - **Automatic Indexing** - Indexes Marketplace API endpoints, schemas, and org repositories on startup
+- **Repository Registry** - Query 69+ ADR repos by tier, language, CI status, or vendor (NEW in v2.1)
 
 #### Tools
 
@@ -103,6 +104,9 @@ AI-powered documentation server that provides semantic search across ADR service
 | `resolve-service-id` | Find ADR services by natural language query. Call this first. |
 | `get-service-docs` | Fetch documentation for a service with optional topic/query filtering |
 | `ask` | Ask any question about ADR codebase, APIs, or architecture |
+| `list-repos` | List ADR repositories with filters (tier, language, CI status, vendor) |
+| `get-repo-metadata` | Get detailed metadata for a specific repo (fuzzy matching supported) |
+| `get-org-statistics` | Get org-wide stats: language distribution, CI coverage, high-issue repos |
 
 #### Usage Examples
 
@@ -118,7 +122,23 @@ get-service-docs("marketplace-api", query: "webhook configuration")
 # Ask a question
 ask("How does participant authentication work?")
 → Synthesized answer with relevant code examples
+
+# List all PHP repos in the fulfillment tier
+list-repos(tier: "fulfillment", language: "PHP")
+→ 9 repos: incomm-fulfillment, amazon-fulfillment, ...
+
+# Get metadata for a specific repo
+get-repo-metadata("changemaker")
+→ Full details: tier, language, workflows, dependencies, issues
+
+# Get org-wide statistics
+get-org-statistics()
+→ 69 repos, 9% CI coverage, PHP dominant (43 repos)
 ```
+
+#### Skills
+
+The plugin includes an **adr-registry** skill that gives Claude deep knowledge about ADR's repository structure, CI/CD patterns, and architecture decisions. Claude will automatically use this context when discussing new services, modernization priorities, or codebase patterns.
 
 #### Modes
 
