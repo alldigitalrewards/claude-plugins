@@ -307,18 +307,103 @@ node plugins/adr-context/src/mcp-servers/adr-context.js
 
 ## Roadmap
 
-### Planned Plugins
+Based on analysis of 45 repositories in the alldigitalrewards org, here's the prioritized plugin roadmap:
 
-- [ ] **Deployment Tools** - Staging/production deployment workflows, environment management
-- [ ] **Code Review** - ADR coding standards enforcement, PR feedback automation
-- [ ] **Database Migration Helper** - Schema change previews, migration script generation
-- [ ] **Ticket Integration** - Link commits to tickets, auto-update status, context from issue tracker
+### Phase 1: High-Impact, Low-Complexity (Next Up)
+
+#### Jira Ticket Integration ⭐⭐⭐⭐⭐
+- [ ] `/ticket <TICKET-123>` - Fetch ticket context (description, acceptance criteria, comments)
+- [ ] Auto-generate commit messages from ticket titles
+- [ ] Update ticket status when PR is merged
+- [ ] Link commits to tickets automatically
+- [ ] Search tickets by natural language query
+
+**Why first**: PR template already requires Jira links, reduces daily context switching, foundation for Code Review plugin.
+
+#### Code Review Enforcer ⭐⭐⭐⭐⭐
+- [ ] Validate PRs have Jira ticket links before merge
+- [ ] Check test files added/modified for code changes
+- [ ] Scan for secrets and vulnerable dependencies
+- [ ] Verify README updated if public API changed
+- [ ] Auto-populate PR description from Jira ticket
+- [ ] Suggest reviewers based on CODEOWNERS
+
+**Integrates with**: GitHub API, Jira API, secrets scanning
+
+### Phase 2: Deployment & Operations
+
+#### Deployment Assistant ⭐⭐⭐⭐⭐
+- [ ] `/deploy` command to trigger GitHub Actions workflows
+- [ ] Interactive deployment wizard (environment, image tag selection)
+- [ ] View workflow runs and logs from Claude
+- [ ] Automatic rollback if health checks fail
+- [ ] Environment variable validation before deploy
+- [ ] Pre-deploy and post-deploy checklists
+
+**Integrates with**: GitHub Actions API, GCP/GKE, Artifact Registry
+
+#### Webhook Debugger ⭐⭐⭐
+- [ ] View webhook delivery logs with natural language queries
+- [ ] Replay failed webhooks interactively
+- [ ] Generate webhook payload examples from OpenAPI spec
+- [ ] Test webhook endpoints locally
+- [ ] Monitor webhook health and delivery rates
+
+**Integrates with**: Marketplace API webhook endpoints
+
+### Phase 3: Developer Experience
+
+#### Database Migration Helper ⭐⭐⭐⭐
+- [ ] Generate migration scripts from schema comparisons
+- [ ] Preview data transformations before execution
+- [ ] Track migration progress with rollback capabilities
+- [ ] Validate data integrity post-migration
+- [ ] WordPress → Sanity migration support (active use case)
+
+**Integrates with**: Sanity API, WordPress REST API, database drivers
+
+#### SDK Code Generator ⭐⭐⭐
+- [ ] Generate SDK client code from OpenAPI spec
+- [ ] Update SDK when API spec changes
+- [ ] Support multiple languages (PHP, TypeScript, Python)
+- [ ] Generate SDK documentation and usage examples
+
+**Uses**: SwaggerHub API spec (v2.2)
+
+#### Environment Config Manager ⭐⭐⭐
+- [ ] Generate .env files from templates
+- [ ] Validate environment variables before deployment
+- [ ] Compare configs between environments (staging/production)
+- [ ] Encrypt/decrypt secrets safely
+- [ ] Warn about missing required variables
+
+### Phase 4: Maintenance & Automation
+
+#### API Testing Assistant ⭐⭐⭐
+- [ ] Generate test suites from OpenAPI spec
+- [ ] Interactive API testing with Claude
+- [ ] Automatic JWT token refresh during testing
+- [ ] Generate Postman/Insomnia collections
+
+#### Dependency Upgrade Automator ⭐⭐
+- [ ] Scan for outdated dependencies across repos
+- [ ] Generate upgrade PRs with breaking change analysis
+- [ ] Security vulnerability scanning
+- [ ] Bulk update common dependencies
+
+#### Documentation Sync ⭐⭐
+- [ ] Sync API docs from OpenAPI spec to README
+- [ ] Update BookStack pages when code changes
+- [ ] Keep SDK documentation in sync with code
 
 ### adr-context Enhancements
 
 - [ ] Index more ADR services and internal repos
 - [ ] Auto-generated API client stubs from OpenAPI specs
 - [ ] Caching layer for faster repeated queries
+- [ ] Integration with Pub/Sub event system
+
+---
 
 Have an idea? Open an issue or reach out in #platform-engineering.
 
