@@ -1,0 +1,53 @@
+name: Validate Plugins
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --workspaces --if-present
+
+      - name: Validate marketplace.json
+        run: |
+          if [ -f ".claude-plugin/marketplace.json" ]; then
+            echo "Validating marketplace.json..."
+            node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/marketplace.json', 'utf8')); console.log('Valid JSON')"
+          else
+            echo "No marketplace.json found"
+            exit 1
+          fi
+
+      - name: Validate plugin.json files
+        run: |
+          echo "Validating plugin configs..."
+          for file in plugins/*/.claude-plugin/plugin.json; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              node -e "JSON.parse(require('fs').readFileSync('$file', 'utf8')); console.log('Valid')"
+            fi
+          done
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Scanning for potential secrets..."
+          if grep -rE "(['\"])[A-Za-z0-9]{32,}['\"]" plugins/ --include="*.js" 2>/dev/null | grep -v "process.env" | head -3; then
+            echo "::warning::Potential hardcoded secrets detected - please review"
+          else
+            echo "No obvious secrets found"
+          fi

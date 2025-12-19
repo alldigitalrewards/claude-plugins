@@ -1,0 +1,9 @@
+# ADR Claude Plugins - Code Owners
+# These users will be automatically requested for review on PRs
+
+# Default - all PRs request review from Jack
+*  @TerminalGravity
+
+# Add more reviewers later as the team grows:
+# /plugins/some-plugin/  @teammate
+# *.js                   @js-expert
