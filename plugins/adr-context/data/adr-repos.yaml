@@ -1,0 +1,501 @@
+# ADR Repository Registry
+# Auto-generated from GitHub org scan - 2025-12-19
+# Used by plugins to understand the codebase landscape
+#
+# Tiers:
+#   core     - Primary platform services, high activity, CI/CD enabled
+#   active   - Regular updates, production use
+#   support  - SDKs, utilities, maintenance services
+#   legacy   - Low activity, may need modernization
+#   archived - No longer maintained (excluded from this file)
+
+org: alldigitalrewards
+last_updated: "2025-12-19"
+artifact_registry: us-docker.pkg.dev  # Migrated from gcr.io
+
+# =============================================================================
+# CORE PLATFORM - Primary services with full CI/CD
+# =============================================================================
+core:
+  rewardstack:
+    description: Core rewards platform backend
+    language: PHP
+    open_issues: 2
+    last_push: "2025-12-19"
+    workflows:
+      - build-and-push.yml
+      - tests.yml
+    dependencies:
+      - marketplace-client
+      - catalog
+      - card-account
+
+  marketplace-client:
+    description: Marketplace frontend client
+    language: PHP
+    open_issues: 19
+    last_push: "2025-12-18"
+    workflows:
+      - build-and-push.yml
+      - lint-twig.yml
+      - tests.yml
+
+  rewardstack-ui:
+    description: Modern React/TypeScript UI
+    language: TypeScript
+    open_issues: 51
+    last_push: "2025-12-18"
+    workflows:
+      - build-and-push.yml
+      - tests.yml
+    stack:
+      - react
+      - typescript
+      - vite
+
+  changemaker:
+    description: Next-gen platform (architecture modernization)
+    language: TypeScript
+    open_issues: 42
+    last_push: "2025-12-18"
+    workflows:
+      - database-migration.yml
+      - deploy-staging-migrations.yml
+      - issue-sync.yml
+      - pr-checks.yml
+      - sync-labels.yml
+    notes: Most advanced CI/CD setup, reference for new repos
+
+  catalog:
+    description: Product catalog service
+    language: PHP
+    open_issues: 20
+    last_push: "2025-12-08"
+    workflows:
+      - build-and-push.yml
+      - tests.yml
+
+  program-content-mgmt:
+    description: Program content management
+    language: PHP
+    open_issues: 2
+    last_push: "2025-12-18"
+
+# =============================================================================
+# FULFILLMENT SERVICES - Gift card & product fulfillment
+# =============================================================================
+fulfillment:
+  incomm-fulfillment:
+    description: InComm gift card fulfillment
+    language: PHP
+    last_push: "2025-12-19"
+    workflows:
+      - build-and-push.yml
+    vendor: InComm
+
+  amazon-fulfillment:
+    description: Amazon gift card fulfillment
+    language: PHP
+    last_push: "2025-12-17"
+    vendor: Amazon
+
+  neocurrency-fulfillment:
+    description: NeoCurrency digital rewards
+    language: PHP
+    last_push: "2025-12-17"
+    vendor: NeoCurrency
+
+  galileo-fulfillment:
+    description: Galileo card fulfillment
+    language: PHP
+    last_push: "2025-12-10"
+    vendor: Galileo
+
+  replink-fulfillment:
+    description: RepLink fulfillment service
+    language: PHP
+    last_push: "2025-12-17"
+    vendor: RepLink
+
+  paypal-fulfillment:
+    description: PayPal payment fulfillment
+    language: PHP
+    last_push: "2025-11-05"
+    vendor: PayPal
+
+  amazon-business-fulfillment:
+    description: Amazon Business fulfillment
+    language: PHP
+    last_push: "2025-12-02"
+    vendor: Amazon
+
+  spcio-fulfillment:
+    description: SPCIO fulfillment service
+    language: PHP
+    last_push: "2025-07-23"
+    vendor: SPCIO
+
+  channel-advisor-fulfillment:
+    description: Channel Advisor fulfillment
+    language: PHP
+    last_push: "2025-03-20"
+    vendor: ChannelAdvisor
+
+# =============================================================================
+# EZ PLATFORM - Newer microservices architecture
+# =============================================================================
+ez_platform:
+  ez-order:
+    description: EZ order processing
+    language: PHP
+    last_push: "2025-12-17"
+
+  ez-catalog:
+    description: EZ catalog service
+    language: PHP
+    last_push: "2025-12-15"
+
+  ez-gui:
+    description: EZ admin interface
+    language: TypeScript
+    last_push: "2025-12-17"
+
+  ez-billing:
+    description: EZ billing service
+    language: PHP
+    last_push: "2025-11-17"
+
+  ez-email:
+    description: EZ email service
+    language: PHP
+    last_push: "2025-11-17"
+
+  ez-service-sdk:
+    description: EZ services SDK
+    language: PHP
+    last_push: "2025-11-17"
+
+  eze-claim:
+    description: EZ claim processing
+    language: PHP
+    last_push: "2025-12-15"
+
+  eze-claim-gui:
+    description: EZ claim admin UI
+    language: TypeScript
+    last_push: "2025-11-06"
+
+  ez-maintenance-incomm:
+    description: InComm catalog maintenance
+    language: JavaScript
+    last_push: "2025-12-15"
+
+  ez-maintenance-neo:
+    description: NeoCurrency maintenance
+    language: JavaScript
+    last_push: "2025-12-15"
+
+  ez-maintenance-amazon:
+    description: Amazon maintenance
+    language: JavaScript
+    last_push: "2025-12-15"
+
+  ez-maintenance-galileo:
+    description: Galileo maintenance
+    language: JavaScript
+    last_push: "2025-08-18"
+
+  ez-ai:
+    description: EZ AI integration
+    language: PHP
+    last_push: "2025-07-14"
+
+  ez-sms:
+    description: EZ SMS service
+    language: PHP
+    last_push: "2025-07-14"
+
+# =============================================================================
+# SDKS & LIBRARIES - Reusable packages
+# =============================================================================
+sdks:
+  rewardstack-sdk:
+    description: Public RewardStack PHP SDK
+    language: PHP
+    last_push: "2025-11-03"
+    public: true
+    package: alldigitalrewards/rewardstack-sdk
+
+  rewardstack-sdk-internal:
+    description: Internal SDK extensions
+    language: PHP
+    last_push: "2025-12-18"
+
+  incomm-sdk:
+    description: InComm API wrapper
+    language: PHP
+    last_push: "2025-12-18"
+    vendor: InComm
+
+  replink-vendor-sdk:
+    description: RepLink vendor SDK
+    language: PHP
+    last_push: "2025-12-16"
+    vendor: RepLink
+
+  galileo-wrapper:
+    description: Galileo API wrapper
+    language: PHP
+    last_push: "2025-10-03"
+    vendor: Galileo
+
+  channeladvisor:
+    description: Channel Advisor client
+    language: PHP
+    last_push: "2023-07-26"
+    vendor: ChannelAdvisor
+    notes: Unofficial client, may need update
+
+# =============================================================================
+# AI & TOOLING - Developer experience
+# =============================================================================
+ai_tools:
+  claude-plugins:
+    description: Claude Code plugin marketplace
+    language: null
+    last_push: "2025-12-19"
+    purpose: developer-tooling
+
+  adr-context-mcp:
+    description: MCP server for ADR context
+    language: JavaScript
+    last_push: "2025-12-19"
+    purpose: developer-tooling
+    package: "@alldigitalrewards/context-mcp"
+
+  adr-slack-bot:
+    description: Slack bot integration
+    language: JavaScript
+    last_push: "2025-12-19"
+
+  rewardstack-mcp:
+    description: RewardStack MCP server
+    language: Python
+    last_push: "2025-09-24"
+    purpose: developer-tooling
+
+  AI_Library:
+    description: AI utilities library
+    language: Python
+    last_push: "2025-09-17"
+
+  customer-support-agent:
+    description: AI customer support agent
+    language: TypeScript
+    last_push: "2025-08-22"
+
+  callcenter:
+    description: AI call center tools
+    language: Python
+    last_push: "2025-05-10"
+
+  fraud:
+    description: Fraud detection AI
+    language: Python
+    last_push: "2025-05-02"
+
+  fraud-auditor:
+    description: Fraud auditing service
+    language: Go
+    last_push: "2025-06-06"
+
+# =============================================================================
+# INFRASTRUCTURE & SERVICES
+# =============================================================================
+infrastructure:
+  identity-manager:
+    description: Identity/auth management
+    language: PHP
+    last_push: "2025-12-12"
+
+  dashboard-service:
+    description: Dashboard backend
+    language: JavaScript
+    last_push: "2025-12-17"
+    open_issues: 1
+
+  transaction-email:
+    description: Transactional email service
+    language: PHP
+    last_push: "2025-12-19"
+    open_issues: 1
+
+  program-email:
+    description: Program email service
+    language: PHP
+    last_push: "2025-12-09"
+
+  shipping:
+    description: Shipping service
+    language: PHP
+    last_push: "2025-12-17"
+
+  service-awards-service:
+    description: Service awards processing
+    language: PHP
+    last_push: "2025-12-16"
+    open_issues: 2
+
+  card-account:
+    description: Card account management
+    language: PHP
+    last_push: "2025-10-10"
+    open_issues: 10
+
+  milestones:
+    description: Milestone tracking
+    language: PHP
+    last_push: "2025-12-11"
+    open_issues: 1
+
+  address-verification-service:
+    description: Address validation
+    language: PHP
+    last_push: "2025-08-21"
+
+  ofac-service:
+    description: OFAC compliance checking
+    language: PHP
+    last_push: "2025-03-13"
+
+  ssn-1099-service:
+    description: Tax reporting service
+    language: PHP
+    last_push: "2025-06-17"
+
+# =============================================================================
+# FRONTENDS & UIS
+# =============================================================================
+frontends:
+  adr-nextjs:
+    description: Next.js marketing site
+    language: TypeScript
+    last_push: "2025-10-22"
+    stack:
+      - nextjs
+      - react
+      - sanity-cms
+      - tailwind
+    notes: No CI/CD yet, needs workflow setup
+
+  galileo-ui:
+    description: Galileo admin UI
+    language: CSS
+    last_push: "2025-11-05"
+
+  usermanual:
+    description: User documentation site
+    language: TypeScript
+    last_push: "2025-09-09"
+    open_issues: 4
+
+  roi-calculator:
+    description: ROI calculator tool
+    language: JavaScript
+    last_push: "2025-10-30"
+
+# =============================================================================
+# DOCUMENTATION & PLANNING
+# =============================================================================
+docs:
+  RewardSTACK-API-Docs:
+    description: API documentation
+    language: null
+    last_push: "2025-10-31"
+    swaggerhub: "https://api.swaggerhub.com/apis/AllDigitalRewards/Marketplace/2.2"
+
+  architecture-roadmap:
+    description: Architecture planning board
+    language: null
+    last_push: "2025-11-21"
+    purpose: planning
+
+# =============================================================================
+# QA & TESTING
+# =============================================================================
+qa:
+  rewardstack-qa-playwright:
+    description: E2E Playwright tests
+    language: TypeScript
+    last_push: "2025-07-10"
+    open_issues: 1
+
+  qa-changemaker:
+    description: Changemaker QA suite
+    language: TypeScript
+    last_push: "2025-09-23"
+
+# =============================================================================
+# MAINTENANCE SERVICES - Catalog sync & updates
+# =============================================================================
+maintenance:
+  amazon-business-maintenance:
+    description: Amazon Business catalog sync
+    language: PHP
+    last_push: "2025-12-19"
+    open_issues: 1
+
+  neocurrency-catalog-maintenance:
+    description: NeoCurrency catalog sync
+    language: PHP
+    last_push: "2025-10-27"
+
+  incomm-catalog-maintenance:
+    description: InComm catalog sync
+    language: PHP
+    last_push: "2025-08-12"
+
+  replink-catalog-maintenance:
+    description: RepLink catalog sync
+    language: PHP
+    last_push: "2025-08-12"
+
+  channeladvisor-catalog-maintenance:
+    description: ChannelAdvisor catalog sync
+    language: PHP
+    last_push: "2025-06-17"
+
+  catalog-search-api:
+    description: Catalog search service
+    language: PHP
+    last_push: "2025-11-13"
+
+# =============================================================================
+# STATISTICS & INSIGHTS
+# =============================================================================
+_stats:
+  total_active_repos: 120  # Non-archived repos pushed in 2025
+  languages:
+    PHP: 75
+    TypeScript: 15
+    JavaScript: 12
+    Python: 6
+    Go: 1
+    Rust: 1
+  repos_with_ci:
+    - rewardstack
+    - marketplace-client
+    - rewardstack-ui
+    - changemaker
+    - catalog
+    - incomm-fulfillment
+  repos_needing_ci:
+    - adr-nextjs
+    - dashboard-service
+    - most ez-* services
+  high_issue_count:  # Repos needing attention
+    - rewardstack-ui: 51
+    - changemaker: 42
+    - catalog: 20
+    - marketplace-client: 19
+    - card-account: 10
