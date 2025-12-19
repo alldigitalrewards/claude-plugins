@@ -307,7 +307,20 @@ node plugins/adr-context/src/mcp-servers/adr-context.js
 
 ## Roadmap
 
-_Coming soon_
+### Planned Plugins
+
+- [ ] **Deployment Tools** - Staging/production deployment workflows, environment management
+- [ ] **Code Review** - ADR coding standards enforcement, PR feedback automation
+- [ ] **Database Migration Helper** - Schema change previews, migration script generation
+- [ ] **Ticket Integration** - Link commits to tickets, auto-update status, context from issue tracker
+
+### adr-context Enhancements
+
+- [ ] Index more ADR services and internal repos
+- [ ] Auto-generated API client stubs from OpenAPI specs
+- [ ] Caching layer for faster repeated queries
+
+Have an idea? Open an issue or reach out in #platform-engineering.
 
 ---
 
