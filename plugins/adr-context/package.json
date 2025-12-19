@@ -1,18 +1,8 @@
 {
-  "name": "@adr/context",
+  "name": "@adr/context-plugin",
   "version": "2.0.0",
-  "description": "AI-powered Context7-style documentation server for AllDigitalRewards - semantic search across ADR services, APIs, and code",
+  "description": "Claude Code plugin for ADR Context - references external @adr/context-mcp server",
   "type": "module",
-  "main": "src/mcp-servers/adr-context.js",
-  "scripts": {
-    "start": "node src/mcp-servers/adr-context.js",
-    "dev": "node --watch src/mcp-servers/adr-context.js",
-    "index": "node src/indexer.js"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "openai": "^4.0.0"
-  },
   "engines": {
     "node": ">=18.0.0"
   },

@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "adr-context": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/src/mcp-servers/adr-context.js"],
+      "command": "npx",
+      "args": ["-y", "@alldigitalrewards/context-mcp"],
       "env": {
         "GITHUB_TOKEN": "${GITHUB_TOKEN}",
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
